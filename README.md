@@ -7,22 +7,39 @@ Bosh and BOSH Lite can be used to deploy just about anything once you've got the
 
 ## Install
 
+### Dependencies and Requirements
+
+The following instructions were tested with fresh install of Ubuntu 12.04 LTS, on a machine with 8 CPUs and 16GB RAM.
+
+```
+$ sudo apt-get update
+$ sudo apt-get install git bzr wget curl virtualbox golang
+$ curl -L get.rvm.io | bash -s stable
+$ export PATH=$PATH:$HOME/.rvm/bin
+$ echo '[[ -s "$HOME/.profile" ]] && source "$HOME/.profile"' >> $HOME/.bashrc
+$ echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"' >> $HOME/.bashrc
+$ source ~/.rvm/scripts/rvm
+$ rvm install 1.9.3
+$ rvm --default use 1.9.3
+$ sudo gem install bundler
+$ git clone https://github.com/cloudfoundry-incubator/spiff
+$ cd spiff
+$ sudo go get github.com/cloudfoundry-incubator/spiff/compare
+$ sudo go get github.com/cloudfoundry-incubator/spiff/flow
+$ sudo go get github.com/cloudfoundry-incubator/spiff/yaml
+$ sudo go get github.com/codegangsta/cli
+$ sudo go get launchpad.net/goyaml
+$ sudo GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/spiff .
+$ cd ..
+$ wget https://cli.run.pivotal.io/stable?release=debian64 -O cf-cli_amd64.deb
+$ sudo dpkg -i cf-cli_amd64.deb
+$ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.4.3_x86_64.deb
+$ sudo dpkg -i vagrant_1.4.3_x86_64.deb
+```
+
 ### Prepare the Environment
 
 For all use cases, first prepare this project with `bundler` .
-
-1. Install [Vagrant](http://www.vagrantup.com/downloads.html).
-
-    Known working version:
-
-    ```
-    $ vagrant -v
-    Vagrant 1.4.3
-    ```
-
-    See [this blog](http://aliwahaj.blogspot.de/2014/01/installing-cloud-foundry-on-vagrant.html) for special instructions for Windows users of BOSH Lite.
-
-1. Install Ruby + RubyGems + Bundler.
 
 1. Run Bundler from the base directory of this repository.
 
@@ -31,58 +48,6 @@ For all use cases, first prepare this project with `bundler` .
     ```
 
 ### Install and Boot a Virtual Machine
-
-Below are installation instructions for different Vagrant providers.
-
-* VMWare Fusion
-* Virtualbox
-* AWS
-
-
-#### Using the VMWare Fusion Provider (preferred)
-
-Fusion is faster, more reliable and we test against it more frequently.
-Both Fusion and the Vagrant Fusion provider require a license.
-
-Known to work with Fusion version 6.0.2 and Vagrant plugin vagrant-vmware-fusion version 2.2.0 .
-
-1. Install and launch VMWare Fusion. You need to accept the VMWare license agreement if you haven't done so already.
-
-1. Install Vagrant Fusion Plugin and license.
-
-    This requires a license file for Fusion. If you don't have one visit http://www.vagrantup.com to purchase a license.
-
-    ```
-    vagrant plugin install vagrant-vmware-fusion
-    vagrant plugin license vagrant-vmware-fusion license.lic
-    ```
-
-
-1. Start Vagrant from the base directory of this repository. This uses the Vagrantfile.
-
-    ```
-    vagrant up --provider vmware_fusion
-    ```
-
-1. Target the BOSH Director and login with admin/admin.
-
-    ```
-    $ bosh target 192.168.50.4
-    Target set to `Bosh Lite Director'
-    $ bosh login
-    Your username: admin
-    Enter password: *****
-    Logged in as `admin'
-    ```
-
-1. Add a set of route entries to your local route table to enable direct Warden container access. Your sudo password may be required.
-
-    ```
-    scripts/add-route
-    ```
-
-#### Using the Virtualbox Provider
-
 
 1. Start Vagrant from the base directory of this repository. This uses the Vagrantfile.
 
@@ -106,58 +71,6 @@ Known to work with Fusion version 6.0.2 and Vagrant plugin vagrant-vmware-fusion
     ```
     scripts/add-route
     ```
-
-#### Using the AWS Provider
-
-1. Install Vagrant AWS provider
-
-    ```
-    vagrant plugin install vagrant-aws
-    ```
-
-    Known to work for version: vagrant-aws 0.4.1
-
-1. Add dummy AWS box
-
-    ```
-    vagrant box add dummy https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box
-    ```
-
-1. Set environment variables called `BOSH_AWS_ACCESS_KEY_ID` and `BOSH_AWS_SECRET_ACCESS_KEY` with the appropriate values. If you've followed along with other documentation such as [these steps to deploy Cloud Foundry on AWS](http://docs.cloudfoundry.org/deploying/ec2/bootstrap-aws-vpc.html), you may simply need to source your `bosh_environment` file.
-1. Make sure the EC2 security group you are using in the `Vagrantfile` exists and allows inbound TCP traffic on ports 25555 (for the BOSH director), 22 (for SSH), 80/443 (for Cloud Controller), and 4443 (for Loggregator).
-1. Run Vagrant from the `aws` folder:
-
-    ```
-    cd aws
-    vagrant up --provider=aws
-    cd ..
-    ```
-1. Find out the public IP of the box you just launched. You can see this info at the end of `vagrant up` output. Another way is running `vagrant ssh-config` under `aws` folder.
-
-
-1. Target the BOSH Director and login with admin/admin.
-
-    ```
-    $ bosh target <public_ip_of_the_box>
-    Target set to `Bosh Lite Director'
-    $ bosh login
-    Your username: admin
-    Enter password: *****
-    Logged in as `admin'
-    ```
-
-1. Edit manifests/cf-stub-spiff.yml to include a 'domain' key under 'properties' that corresponds to a domain you've set up for this Cloud Foundry instance, or if you want to use xip.io, it can be {your.public.ip}.xip.io.
-
-1. Direct future traffic received on the instance to another ip (the HAProxy):
-
-```
-INTERNAL_IP=<internal IP of instance>
-sudo iptables -t nat -A PREROUTING -p tcp -d $INTERNAL_IP --dport 80 -j DNAT --to 10.244.0.34:80
-sudo iptables -t nat -A PREROUTING -p tcp -d $INTERNAL_IP --dport 443 -j DNAT --to 10.244.0.34:443
-sudo iptables -t nat -A PREROUTING -p tcp -d $INTERNAL_IP --dport 4443 -j DNAT --to 10.244.0.34:4443
-```
-
-These rules are cleared on restart. They can be saved and configured to be reloaded on startup if so desired, assuming granted the internal IP address remains the same.
 
 ## Restart the Director
 
