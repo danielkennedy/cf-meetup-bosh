@@ -9,33 +9,17 @@ Bosh and BOSH Lite can be used to deploy just about anything once you've got the
 
 ### Dependencies and Requirements
 
-The following instructions were tested with fresh install of Ubuntu 12.04 LTS, on a machine with 8 CPUs and 16GB RAM.
+The instructions that follow tested with fresh install of Ubuntu 12.04 LTS, on a machine with 8 CPUs and 16GB RAM. Prior to continuing, you should make sure you have the following dependencies met:
 
-```
-$ sudo apt-get update
-$ sudo apt-get install git bzr wget curl virtualbox golang
-$ curl -L get.rvm.io | bash -s stable
-$ export PATH=$PATH:$HOME/.rvm/bin
-$ echo '[[ -s "$HOME/.profile" ]] && source "$HOME/.profile"' >> $HOME/.bashrc
-$ echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"' >> $HOME/.bashrc
-$ source ~/.rvm/scripts/rvm
-$ rvm install 1.9.3
-$ rvm --default use 1.9.3
-$ sudo gem install bundler
-$ git clone https://github.com/cloudfoundry-incubator/spiff
-$ cd spiff
-$ sudo go get github.com/cloudfoundry-incubator/spiff/compare
-$ sudo go get github.com/cloudfoundry-incubator/spiff/flow
-$ sudo go get github.com/cloudfoundry-incubator/spiff/yaml
-$ sudo go get github.com/codegangsta/cli
-$ sudo go get launchpad.net/goyaml
-$ sudo GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/spiff .
-$ cd ..
-$ wget https://cli.run.pivotal.io/stable?release=debian64 -O cf-cli_amd64.deb
-$ sudo dpkg -i cf-cli_amd64.deb
-$ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.4.3_x86_64.deb
-$ sudo dpkg -i vagrant_1.4.3_x86_64.deb
-```
+1. `git`
+2. `bzr`
+3. `curl`
+4. `wget`
+5. `virtualbox`
+6. `vagrant` (tested with version 4.3.10)
+7. `golang`
+8. `ruby` (version 1.9.3) + RubyGems and Bundler
+9. `cf`
 
 ### Prepare the Environment
 
@@ -45,6 +29,20 @@ For all use cases, first prepare this project with `bundler` .
 
     ```
     bundle
+    ```
+
+1. Install spiff
+
+    ```
+    git clone https://github.com/cloudfoundry-incubator/spiff
+    cd spiff
+    sudo go get github.com/cloudfoundry-incubator/spiff/compare
+    sudo go get github.com/cloudfoundry-incubator/spiff/flow
+    sudo go get github.com/cloudfoundry-incubator/spiff/yaml
+    sudo go get github.com/codegangsta/cli
+    sudo go get launchpad.net/goyaml
+    sudo GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/spiff .
+    cd ..
     ```
 
 ### Install and Boot a Virtual Machine
@@ -64,6 +62,28 @@ For all use cases, first prepare this project with `bundler` .
     Your username: admin
     Enter password: *****
     Logged in as `admin'
+    ```
+
+1. (Optional) Take a look at the BOSH environment
+
+    ```
+    bosh status
+    Config
+                  /Users/pivotal/.bosh_config
+
+    Director
+      Name        micro-bosh
+      URL         https://54.85.89.30:25555
+      Version     1.2427.0 (release:921db96c bosh:921db96c)
+      User        admin
+      UUID        44e69f8b-9091-405c-a2c2-d29bebb1ce8a
+      CPI         aws
+      dns         enabled (domain_name: microbosh)
+      compiled_package_cache     disabled
+      snapshots   disabled
+
+    Deployment
+      not set
     ```
 
 1. Add a set of route entries to your local route table to enable direct Warden container access every time your networking gets reset (e.g. reboot or connect to a different network). Your sudo password may be required.
@@ -246,7 +266,7 @@ Choose an instance:
 
 The Warden container will be lost after a vm reboot, but you can restore your deployment with `bosh cck`, BOSH's command for recovering from unexpected errors.
 ```
-$ bosh cck
+$ vagrant up; bosh cck; scripts/add-route
 ```
 
 Choose `2` to recreate each missing VM:
