@@ -11,15 +11,25 @@ Bosh and BOSH Lite can be used to deploy just about anything once you've got the
 
 The instructions that follow tested with fresh install of Ubuntu 12.04 LTS, on a machine with 8 CPUs and 16GB RAM. Prior to continuing, you should make sure you have the following dependencies met:
 
-1. `git`
-2. `bzr`
-3. `curl`
-4. `wget`
-5. `virtualbox`
-6. `vagrant` (tested with version 4.3.10)
-7. `golang`
-8. `ruby` (version 1.9.3) + RubyGems and Bundler
-9. `cf`
+1. Install `virtualbox`
+6. Install `vagrant` (tested with version 4.3.10)
+7. `ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"`
+8. `brew doctor`
+11. `curl -sSL https://get.rvm.io | bash -s stable`
+12. `rvm install 1.9.3`
+13. `rvm use 1.9.3`
+14. `gem install bosh_cli`
+15. `git clone https://github.com/cloudfoundry/cf-release`
+16. `git clone https://github.com/cloudfoundry/bosh-lite`
+17. `cd bosh-lite`
+17. `vagrant up --provider virtualbox`
+18. `bosh target 192.168.50.4 lite`
+19. `./scripts/add-route`
+20. install golang
+21. install spiff
+22. generate manifest
+20. `bosh deployment manifests/cf-manifest.yml`
+19. `./scripts/provision_cf`
 
 ### Prepare the Environment
 
